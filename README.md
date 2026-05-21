@@ -1,5 +1,7 @@
 # BarCycle
 
+![BarCycle icon](Resources/icon.png)
+
 BarCycle is a small macOS utility that helps power users quickly hide, restore, and cycle through application windows using a compact HUD. It is useful when you have many windows open and want a focused, keyboard-friendly way to manage visibility without rearranging windows or switching away from the current workspace.
 
 ## Problem it solves
@@ -21,6 +23,7 @@ BarCycle is a small macOS utility that helps power users quickly hide, restore, 
 - `HUDWindow.swift` — HUD presentation and interactions
 - `WindowScanner.swift` — window discovery and metadata
 - `SettingsWindow.swift` — preferences UI
+- `Resources/icon.png` — app and DMG artwork
 - `build.sh` — convenience build script
 
 ## Installation

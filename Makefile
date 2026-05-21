@@ -15,3 +15,6 @@ clean:
 
 fmt:
 	# No-op: Swift formatting is handled by Xcode or swift-format if configured
+
+open:
+	open $(APP_NAME).app

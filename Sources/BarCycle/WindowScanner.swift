@@ -129,8 +129,7 @@ class WindowScanner {
         
         for window in windowList {
             guard let windowID = window[kCGWindowNumber as String] as? CGWindowID,
-                  let ownerName = window[kCGWindowOwnerName as String] as? String,
-                  let layer = window[kCGWindowLayer as String] as? Int32,
+                let ownerName = window[kCGWindowOwnerName as String] as? String,
                   let boundsDict = window[kCGWindowBounds as String] as? [String: Any],
                   let rect = CGRect(dictionaryRepresentation: boundsDict as CFDictionary) else {
                 continue
