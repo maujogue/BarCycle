@@ -17,13 +17,6 @@ With **BarCycle**, you keep items hidden but quicly accessible via ⌥ + tab:
 - **interact** with it
 - it **hides** automatically
 
-## Features
-
-- Keyboard-first item cycling
-- 3 item zones (always hidden/collapsed/visible)
-- Minimal memory (30mb only)
-- Minimal customization
-
 ## Screenshots
 
 The  ⌥ + tab shortcut in action:
@@ -42,33 +35,34 @@ Average memory consumption:
 
 ![memory](Resources/memory.png)
 
+## Features
+
+- Keyboard-first item cycling
+- 3 item zones (always hidden/collapsed/visible)
+- Minimal memory (30mb only)
+- Minimal customization
+
 ## Installation 
 
 - Download latest dmg file from release
 - Drag and drop the app into your applications folder
-- Open the app
 
-## Usage
+#### Bypass Gatekeeper on first launch
 
-1. Launch the app.
-2. Configure your items by zones (see tutorial in the settings)
-3. Quickly access your items with ⌥ + tab
+Because I don't have an Apple Developer account, you are going to get a warning. That's ok.
 
+- Go to System Preferences > Security & Privacy > General
+- Click "Open Anyway" for BarCycle.
 
-## Build from source
+> After that, you should be able to open the app without issues.
 
-```bash
-./build.sh
-open ./BarCycle.app
-```
+#### Build from source
 
-## Project Structure
+If you build from source, you won't have to bypass Gatekeeper as the app will be signed with an ad-hoc signature!
 
-- `BarCycleApp.swift` - app entry point
-- `HUDWindow.swift` - HUD presentation
-- `WindowScanner.swift` - window discovery
-- `SettingsWindow.swift` - preferences UI
-- `build.sh` - build helper
+- ```./build.sh```
+- open the dmg file generated in the dist folder
+- drag and drop the app into your applications folder
 
 ## Contributing
 
@@ -77,6 +71,15 @@ open ./BarCycle.app
 3. Run the project locally.
 4. Open a pull request with a clear description.
 
-## License
+#### Project Structure
+
+- `BarCycleApp.swift` - app entry point
+- `HUDWindow.swift` - HUD presentation
+- `WindowScanner.swift` - window discovery
+- `SettingsWindow.swift` - preferences UI
+- `build.sh` - build helper
+
+
+#### License
 
 - This project is licensed under the MIT License.
