@@ -1,4 +1,5 @@
 import Cocoa
+import ServiceManagement
 
 extension NSColor {
     func toHex() -> String? {
@@ -26,6 +27,7 @@ extension NSColor {
 
 extension Notification.Name {
     static let settingsChanged = Notification.Name("BarCycle_SettingsChanged")
+    static let settingsWindowVisibilityChanged = Notification.Name("BarCycle_SettingsWindowVisibilityChanged")
 }
 
 class AppSettings {
@@ -38,13 +40,10 @@ class AppSettings {
     let togglePairs: [(collapsed: String, expanded: String)] = [
         ("‹", "›"),   // Sleek Chevrons
         ("◀", "▶"),   // Solid Triangles
-        ("◁", "▷"),   // Outline Triangles
         ("○", "●"),   // Minimalist Dots
-        ("◇", "◆"),   // Elegant Diamonds
-        ("⊖", "⊕"),   // Status Circles
         ("⚡️", "💤"), // Lightning / Sleep Emojis
         ("👁️", "🙈"), // Eye / Monkey Emojis
-        ("🟢", "🔴")  // Green / Red Emojis
+        ("🟢", "🔴 ")  // Green / Red Emojis
     ]
 
     
@@ -55,6 +54,7 @@ class AppSettings {
             if let hex = UserDefaults.standard.string(forKey: unselectedBgKey), let color = NSColor(hex: hex) {
                 return color
             }
+            // Default: electric blue rgb(20.586, 24.173, 234.14)
             return NSColor(red: 20.586 / 255.0, green: 24.173 / 255.0, blue: 234.14 / 255.0, alpha: 1.0)
         }
         set {
@@ -68,6 +68,7 @@ class AppSettings {
             if let hex = UserDefaults.standard.string(forKey: unselectedTextKey), let color = NSColor(hex: hex) {
                 return color
             }
+            // Default: white
             return .white
         }
         set {
@@ -86,6 +87,28 @@ class AppSettings {
         }
     }
     
+    var launchAtLogin: Bool {
+        get {
+            return SMAppService.mainApp.status == .enabled
+        }
+        set {
+            do {
+                if newValue {
+                    if SMAppService.mainApp.status != .enabled {
+                        try SMAppService.mainApp.register()
+                    }
+                } else {
+                    if SMAppService.mainApp.status == .enabled {
+                        try SMAppService.mainApp.unregister()
+                    }
+                }
+            } catch {
+                print("BarCycle: Failed to update Launch at Login: \(error)")
+            }
+            NotificationCenter.default.post(name: .settingsChanged, object: nil)
+        }
+    }
+
     var currentTogglePair: (collapsed: String, expanded: String) {
         let index = togglePairIndex
         if index >= 0 && index < togglePairs.count {
@@ -94,3 +117,4 @@ class AppSettings {
         return togglePairs[0]
     }
 }
+

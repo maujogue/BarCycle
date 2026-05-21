@@ -72,6 +72,9 @@ cp Resources/Info.plist "$APP_BUNDLE/Contents/Info.plist"
 # 5b. Copy the generated app icon into the app bundle resources
 cp "$DIST_DIR/$APP_ICON_NAME" "$APP_ICON_PATH"
 
+# 5c. Copy auxiliary resources (tutorial image, etc.) into the app bundle
+cp Resources/help.png "$APP_BUNDLE/Contents/Resources/help.png"
+
 # 6. Apply ad-hoc code signing (required for Apple Silicon and local execution)
 echo "🔐 Signing application bundle..."
 codesign --force --deep --sign - "$APP_BUNDLE"

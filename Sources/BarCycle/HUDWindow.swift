@@ -29,12 +29,14 @@ class OverlayBadgeView: NSView {
     private func setupViews() {
         wantsLayer = true
         
+        // Selection outline around the status item icon (initially hidden/clear)
         selectionOutlineView.wantsLayer = true
         selectionOutlineView.layer?.borderWidth = 2.0
         selectionOutlineView.layer?.cornerRadius = 5.0
         selectionOutlineView.translatesAutoresizingMaskIntoConstraints = false
         addSubview(selectionOutlineView)
         
+        // Circular badge view with white border
         capsuleView.wantsLayer = true
         capsuleView.layer?.cornerRadius = 8.0
         capsuleView.layer?.masksToBounds = true
@@ -43,11 +45,13 @@ class OverlayBadgeView: NSView {
         capsuleView.translatesAutoresizingMaskIntoConstraints = false
         addSubview(capsuleView)
         
+        // Shadow for the badge
         capsuleView.layer?.shadowColor = NSColor.black.cgColor
         capsuleView.layer?.shadowOpacity = 0.3
         capsuleView.layer?.shadowOffset = CGSize(width: 0, height: -1)
         capsuleView.layer?.shadowRadius = 1
         
+        // Number label inside the circular badge
         numberLabel.stringValue = "\(index + 1)"
         numberLabel.alignment = .center
         numberLabel.isBordered = false
@@ -57,12 +61,16 @@ class OverlayBadgeView: NSView {
         numberLabel.translatesAutoresizingMaskIntoConstraints = false
         capsuleView.addSubview(numberLabel)
         
+        // AutoLayout: outline is pinned to the TOP of the view with a FIXED height
+        // matching the actual menu bar thickness. Badge hangs off the bottom-right corner.
         NSLayoutConstraint.activate([
+            // Selection outline: pinned to top, fixed height = menu bar
             selectionOutlineView.topAnchor.constraint(equalTo: topAnchor, constant: 0),
             selectionOutlineView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 2),
             selectionOutlineView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10),
             selectionOutlineView.heightAnchor.constraint(equalToConstant: iconAreaHeight),
             
+            // Number badge circle at the bottom-right corner of the outline
             capsuleView.widthAnchor.constraint(equalToConstant: 16),
             capsuleView.heightAnchor.constraint(equalToConstant: 16),
             capsuleView.centerXAnchor.constraint(equalTo: selectionOutlineView.trailingAnchor),
@@ -161,6 +169,9 @@ class HUDWindow: NSPanel {
         wasHiderCollapsed = HiderModule.shared.isCollapsed
         if wasHiderCollapsed {
             HiderModule.shared.isCollapsed = false
+            
+            // Wait for menu bar re-layout to complete before scanning and showing HUD.
+            // 0.08 seconds (80ms) is the sweet spot for an instantaneous, single-stage experience.
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) { [weak self] in
                 guard let self = self else { return }
                 self.setupAndShowHUDWindow()
@@ -220,6 +231,7 @@ class HUDWindow: NSPanel {
         menuCheckCount = 0
         wasMenuDetected = false
         
+        // Start a timer checking every 0.2 seconds for dropdown menu visibility
         menuMonitorTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] timer in
             guard let self = self else {
                 timer.invalidate()
@@ -233,6 +245,8 @@ class HUDWindow: NSPanel {
                 self.wasMenuDetected = true
             }
             
+            // Grace period: check for 5 iterations (1.0 second) to see if a menu opens.
+            // If we detected a menu and it has now closed, OR if 1.0 second passed without any menu opening, collapse!
             if (self.wasMenuDetected && !menuVisible) || (!self.wasMenuDetected && self.menuCheckCount >= 5) {
                 timer.invalidate()
                 self.menuMonitorTimer = nil
@@ -252,6 +266,7 @@ class HUDWindow: NSPanel {
         
         for window in windowList {
             if let layer = window[kCGWindowLayer as String] as? Int32 {
+                // Layer 101 is kCGPopUpMenuWindowLevel, which is used for all dropdown and popup menus
                 if layer == 101 {
                     return true
                 }
@@ -260,6 +275,8 @@ class HUDWindow: NSPanel {
         return false
     }
 
+
+    
     private func filterAndPopulate() {
         filteredItems = allItems
         
@@ -267,13 +284,16 @@ class HUDWindow: NSPanel {
         
         guard !filteredItems.isEmpty else { return }
         
-        let screen = NSScreen.main ?? NSScreen.screens.first ?? NSScreen()
+        let screen = WindowScanner.activeScreen()
         let screenFrame = screen.frame
         
+        // Use NSStatusBar.system.thickness for the menu bar content height,
+        // then add 6pt so the outline fully wraps the icons with breathing room.
         let menuBarHeight = NSStatusBar.system.thickness + 6
-        let badgeOverhang: CGFloat = 10
+        let badgeOverhang: CGFloat = 10 // extra space below menu bar for the number circle
         let windowHeight = menuBarHeight + badgeOverhang
         
+        // Position window flush with the very top of the screen
         let windowFrame = NSRect(
             x: screenFrame.origin.x,
             y: screenFrame.maxY - windowHeight,
@@ -282,6 +302,8 @@ class HUDWindow: NSPanel {
         )
         setFrame(windowFrame, display: true, animate: false)
         
+        // Add badge subviews — each one spans the full window height
+        // with the outline constrained to the top menuBarHeight points.
         for (index, item) in filteredItems.enumerated() {
             let itemWidth = item.bounds.size.width
             let relativeX = item.bounds.origin.x - screenFrame.origin.x
@@ -358,7 +380,7 @@ class HUDWindow: NSPanel {
     
     override func performKeyEquivalent(with event: NSEvent) -> Bool {
         let keyCode = event.keyCode
-        if keyCode == 48 {
+        if keyCode == 48 { // Tab
             let shiftPressed = event.modifierFlags.contains(.shift)
             cycleSelection(forward: !shiftPressed)
             return true
@@ -370,29 +392,29 @@ class HUDWindow: NSPanel {
         let keyCode = event.keyCode
         
         switch keyCode {
-        case 53:
+        case 53: // Escape
             dismissHUD(triggerSelected: false)
-        
-        case 36:
+            
+        case 36: // Return / Enter
             dismissHUD(triggerSelected: true)
-        
-        case 123:
+            
+        case 123: // Arrow Left
             cycleSelection(forward: false)
-        
-        case 124:
+            
+        case 124: // Arrow Right
             cycleSelection(forward: true)
-        
-        case 125:
+            
+        case 125: // Arrow Down
             cycleSelection(forward: true)
-        
-        case 126:
+            
+        case 126: // Arrow Up
             cycleSelection(forward: false)
-        
-        case 48:
+            
+        case 48: // Tab
             let shiftPressed = event.modifierFlags.contains(.shift)
             cycleSelection(forward: !shiftPressed)
-        
-        case 51:
+            
+        case 51: // Backspace / Delete
             if !typedNumberBuffer.isEmpty {
                 typedNumberBuffer.removeLast()
                 if let targetNumber = Int(typedNumberBuffer) {
@@ -403,7 +425,7 @@ class HUDWindow: NSPanel {
                     }
                 }
             }
-        
+            
         default:
             if let chars = event.charactersIgnoringModifiers, let firstChar = chars.first, firstChar.isNumber {
                 typedNumberBuffer.append(firstChar)
@@ -413,6 +435,7 @@ class HUDWindow: NSPanel {
                         selectedIndex = targetIndex
                         updateSelectionHighlight()
                     } else {
+                        // If typing another digit makes it out of bounds, restart buffer with the new digit
                         typedNumberBuffer = String(firstChar)
                         if let resetNumber = Int(typedNumberBuffer) {
                             let resetIndex = resetNumber - 1
