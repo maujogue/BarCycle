@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.1.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleIdentifier</key>
+    <string>com.antigravity.BarCycle</string>
+    <key>CFBundleName</key>
+    <string>BarCycle</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0</string>
+    <key>CFBundleVersion</key>
+    <string>1.0</string>
+    <key>CFBundleExecutable</key>
+    <string>BarCycle</string>
+    <key>LSUIElement</key>
+    <true/>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+    <key>NSAccessibilityUsageDescription</key>
+    <string>BarCycle requires Accessibility permissions to locate and trigger your menu bar items.</string>
+    <key>NSScreenCaptureUsageDescription</key>
+    <string>BarCycle requires Screen Recording permissions to capture the icons of your menu bar items.</string>
+</dict>
+</plist>

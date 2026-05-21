@@ -1,0 +1,52 @@
+# macOS
+.DS_Store
+.AppleDouble
+._*
+
+# Icon services
+Icon?
+
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcworkspace
+*.xccheckout
+*.xcscmblueprint
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/
+*.xcworkspace/contents.xcuserstate
+
+# Swift Package Manager
+.build/
+Packages/
+.swiftpm/
+
+# CocoaPods
+Pods/
+
+# Carthage
+Carthage/Build/
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+
+# App bundles and artifacts
+*.app
+*.ipa
+
+# IDEs
+.idea/
+.vscode/
+
+# Editor temp files
+*~
+*.swp
+*.swo
+*.tmp
+
+# Logs
+*.log
+dist/
