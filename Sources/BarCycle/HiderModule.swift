@@ -59,7 +59,14 @@ class HiderModule {
         if event?.type == .rightMouseUp {
             SettingsWindow.shared.presentWindow()
         } else {
+            MenuTracker.shared.stopTracking()
             isCollapsed.toggle()
+            
+            if !isCollapsed {
+                MenuTracker.shared.startTracking(delay: AppSettings.shared.manualAutoCollapseDelay.rawValue) {
+                    HiderModule.shared.isCollapsed = true
+                }
+            }
         }
     }
     

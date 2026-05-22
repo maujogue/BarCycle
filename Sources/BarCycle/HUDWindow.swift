@@ -135,10 +135,6 @@ class HUDWindow: NSPanel {
     private var wasHiderCollapsed = false
     private var typedNumberBuffer = ""
     
-    private var menuMonitorTimer: Timer?
-    private var menuCheckCount = 0
-    private var wasMenuDetected = false
-    
     override var canBecomeKey: Bool {
         return true
     }
@@ -163,8 +159,7 @@ class HUDWindow: NSPanel {
     }
     
     func showHUD() {
-        menuMonitorTimer?.invalidate()
-        menuMonitorTimer = nil
+        MenuTracker.shared.stopTracking()
         
         wasHiderCollapsed = HiderModule.shared.isCollapsed
         if wasHiderCollapsed {
@@ -206,7 +201,11 @@ class HUDWindow: NSPanel {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
                 guard let self = self else { return }
                 WindowScanner.shared.clickStatusItem(item)
-                self.startMenuMonitoringTimer()
+                if self.wasHiderCollapsed {
+                    MenuTracker.shared.startTracking(delay: AppSettings.shared.hudAutoCollapseDelay.rawValue) {
+                        HiderModule.shared.isCollapsed = true
+                    }
+                }
             }
         } else {
             if wasHiderCollapsed {
@@ -222,60 +221,13 @@ class HUDWindow: NSPanel {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
             guard let self = self else { return }
             WindowScanner.shared.clickStatusItem(item)
-            self.startMenuMonitoringTimer()
-        }
-    }
-    
-    private func startMenuMonitoringTimer() {
-        menuMonitorTimer?.invalidate()
-        menuCheckCount = 0
-        wasMenuDetected = false
-        
-        // Start a timer checking every 0.2 seconds for dropdown menu visibility
-        menuMonitorTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] timer in
-            guard let self = self else {
-                timer.invalidate()
-                return
-            }
-            
-            let menuVisible = self.isMenuWindowOpen()
-            self.menuCheckCount += 1
-            
-            if menuVisible {
-                self.wasMenuDetected = true
-            }
-            
-            // Grace period: check for 5 iterations (1.0 second) to see if a menu opens.
-            // If we detected a menu and it has now closed, OR if 1.0 second passed without any menu opening, collapse!
-            if (self.wasMenuDetected && !menuVisible) || (!self.wasMenuDetected && self.menuCheckCount >= 5) {
-                timer.invalidate()
-                self.menuMonitorTimer = nil
-                
-                if self.wasHiderCollapsed {
+            if self.wasHiderCollapsed {
+                MenuTracker.shared.startTracking(delay: AppSettings.shared.hudAutoCollapseDelay.rawValue) {
                     HiderModule.shared.isCollapsed = true
                 }
             }
         }
     }
-    
-    private func isMenuWindowOpen() -> Bool {
-        let options = CGWindowListOption.optionOnScreenOnly
-        guard let windowList = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] else {
-            return false
-        }
-        
-        for window in windowList {
-            if let layer = window[kCGWindowLayer as String] as? Int32 {
-                // Layer 101 is kCGPopUpMenuWindowLevel, which is used for all dropdown and popup menus
-                if layer == 101 {
-                    return true
-                }
-            }
-        }
-        return false
-    }
-
-
     
     private func filterAndPopulate() {
         filteredItems = allItems

@@ -30,6 +30,36 @@ extension Notification.Name {
     static let settingsWindowVisibilityChanged = Notification.Name("BarCycle_SettingsWindowVisibilityChanged")
 }
 
+enum AutoCollapseDelay: Double, CaseIterable, Identifiable {
+    case zero = 0.0
+    case one = 1.0
+    case three = 3.0
+    case five = 5.0
+    case ten = 10.0
+    case thirty = 30.0
+    case oneMinute = 60.0
+    case never = -1.0
+
+    var id: Double { rawValue }
+
+    var label: String {
+        switch self {
+        case .zero: return "0s"
+        case .one: return "1s"
+        case .three: return "3s"
+        case .five: return "5s"
+        case .ten: return "10s"
+        case .thirty: return "30s"
+        case .oneMinute: return "1min"
+        case .never: return "Never"
+        }
+    }
+
+    static func from(double: Double) -> AutoCollapseDelay {
+        return allCases.min(by: { abs($0.rawValue - double) < abs($1.rawValue - double) }) ?? .never
+    }
+}
+
 class AppSettings {
     static let shared = AppSettings()
     
@@ -115,6 +145,38 @@ class AppSettings {
             return togglePairs[index]
         }
         return togglePairs[0]
+    }
+    
+    // Auto-collapse delay when using the HUD (Option+Tab)
+    // -1 means never
+    var hudAutoCollapseDelay: AutoCollapseDelay {
+        get {
+            if UserDefaults.standard.object(forKey: "BarCycle_HudAutoCollapseDelay") == nil {
+                return .zero // Default 0s for HUD (instant collapse after action)
+            }
+            let doubleVal = UserDefaults.standard.double(forKey: "BarCycle_HudAutoCollapseDelay")
+            return AutoCollapseDelay.from(double: doubleVal)
+        }
+        set {
+            UserDefaults.standard.set(newValue.rawValue, forKey: "BarCycle_HudAutoCollapseDelay")
+            NotificationCenter.default.post(name: .settingsChanged, object: nil)
+        }
+    }
+    
+    // Auto-collapse delay when manually clicking the toggle arrow
+    // -1 means never
+    var manualAutoCollapseDelay: AutoCollapseDelay {
+        get {
+            if UserDefaults.standard.object(forKey: "BarCycle_ManualAutoCollapseDelay") == nil {
+                return .never // Default never for manual clicks
+            }
+            let doubleVal = UserDefaults.standard.double(forKey: "BarCycle_ManualAutoCollapseDelay")
+            return AutoCollapseDelay.from(double: doubleVal)
+        }
+        set {
+            UserDefaults.standard.set(newValue.rawValue, forKey: "BarCycle_ManualAutoCollapseDelay")
+            NotificationCenter.default.post(name: .settingsChanged, object: nil)
+        }
     }
 }
 
