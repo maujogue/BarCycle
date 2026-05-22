@@ -16,37 +16,35 @@ class HiderModule {
         set {
             UserDefaults.standard.set(newValue, forKey: isCollapsedKey)
             updateSpacerWidths()
+            NotificationCenter.default.post(name: .settingsChanged, object: nil)
         }
     }
     
     private init() {}
     
     func setup() {
-        // Spacer item: This resides to the left of the toggle button.
-        // Icons to the left of this spacer will be pushed off screen when collapsed.
-        spacerItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        if let button = spacerItem?.button {
-            button.title = "│"
-            button.isEnabled = false // Cannot click it directly
-            button.toolTip = "Cmd+Drag icons to the LEFT of this divider to hide them!"
-        }
-
         // Toggle item: This is the visible toggle button on the right side of the menu bar
         toggleItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = toggleItem?.button {
             button.sendAction(on: [.leftMouseUp, .rightMouseUp])
             button.target = self
             button.action = #selector(togglePressed)
+            button.alignment = .right
             button.toolTip = "Left-click to toggle, Right-click for Preferences"
         }
 
-        // Settings spacer item: this sits to the right of the toggle button.
-        // When Settings is closed, it pushes the items after it offscreen.
+        // First separator (spacerA): initially placed left of toggle.
+        spacerItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        if let button = spacerItem?.button {
+            button.title = "│"
+            button.isEnabled = false
+        }
+
+        // Second separator (spacerB): initially placed left of spacerA.
         settingsSpacerItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = settingsSpacerItem?.button {
             button.title = "│"
             button.isEnabled = false
-            button.toolTip = "Items to the right of this divider are visible only while Settings is open."
         }
         
         NotificationCenter.default.addObserver(self, selector: #selector(onSettingsChanged), name: .settingsChanged, object: nil)
@@ -80,33 +78,53 @@ class HiderModule {
     }
 
     func updateSpacerWidths() {
-        guard let spacer = spacerItem else { return }
+        guard let toggle = toggleItem, let spacerA = spacerItem, let spacerB = settingsSpacerItem else { return }
+        
+        let toggleX = toggle.button?.window?.frame.minX ?? 0
+        let spacerAX = spacerA.button?.window?.frame.minX ?? 0
+        let spacerBX = spacerB.button?.window?.frame.minX ?? 0
+        
+        // Determine which spacer is physically on the right (closer to the toggle)
+        let aIsRight = (spacerAX != 0 && spacerBX != 0) ? (spacerAX > spacerBX) : true
+        
+        let rightSpacer = aIsRight ? spacerA : spacerB
+        let rightX = aIsRight ? spacerAX : spacerBX
+        
+        let leftSpacer = aIsRight ? spacerB : spacerA
+        let leftX = aIsRight ? spacerBX : spacerAX
+        
+        // Detect if either is wrongly placed to the right of toggleItem
+        let isRightSpacerWrong = (toggleX != 0 && rightX != 0) && (rightX > toggleX)
+        let isLeftSpacerWrong = (toggleX != 0 && leftX != 0) && (leftX > toggleX)
         
         let pair = AppSettings.shared.currentTogglePair
-        if isCollapsed {
-            // When collapsed, set length to push items off-screen. Must be at least as wide
-            // as the widest connected display so external monitors are also covered.
-            spacer.length = maxSpacerLength()
-            if let button = toggleItem?.button {
-                button.title = pair.collapsed
-            }
+        if let button = toggle.button {
+            button.title = isCollapsed ? pair.collapsed : pair.expanded
+        }
+        
+        toggle.length = NSStatusItem.variableLength // Toggle always stays small so it remains visible
+        
+        // rightSpacer acts as the "toggle" separator
+        if isRightSpacerWrong {
+            rightSpacer.length = 15
+            rightSpacer.button?.isHidden = false
         } else {
-            // When expanded, set standard length showing the divider.
-            spacer.length = 15
-            if let button = toggleItem?.button {
-                button.title = pair.expanded
-            }
+            rightSpacer.length = isCollapsed ? maxSpacerLength() : 15
+            rightSpacer.button?.isHidden = isCollapsed
         }
-
-        if let spacerButton = spacer.button {
-            spacerButton.isHidden = isCollapsed
+        
+        // leftSpacer acts as the "always hidden" separator
+        if isLeftSpacerWrong {
+            leftSpacer.length = 15
+            leftSpacer.button?.isHidden = false
+        } else {
+            leftSpacer.length = isSettingsWindowVisible ? 15 : maxSpacerLength()
+            leftSpacer.button?.isHidden = !isSettingsWindowVisible
         }
-
-        guard let settingsSpacer = settingsSpacerItem else { return }
-        settingsSpacer.length = isSettingsWindowVisible ? 15 : maxSpacerLength()
-        if let settingsSpacerButton = settingsSpacer.button {
-            settingsSpacerButton.isHidden = !isSettingsWindowVisible
-        }
+        
+        // Update tooltips to reflect their dynamic roles
+        rightSpacer.button?.toolTip = "Cmd+Drag icons to the LEFT of this divider to hide them!"
+        leftSpacer.button?.toolTip = "Items to the right of this divider are visible only while Settings is open."
     }
 }
 

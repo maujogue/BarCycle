@@ -36,6 +36,7 @@ final class SettingsStore: ObservableObject {
     @Published var textColor: Color
     @Published var toggleIndex: Int
     @Published var launchAtLogin: Bool
+    @Published var showFullBar: Bool
 
     private var observer: NSObjectProtocol?
 
@@ -44,6 +45,7 @@ final class SettingsStore: ObservableObject {
         self.textColor = Color(nsColor: AppSettings.shared.unselectedTextColor)
         self.toggleIndex = AppSettings.shared.togglePairIndex
         self.launchAtLogin = AppSettings.shared.launchAtLogin
+        self.showFullBar = !HiderModule.shared.isCollapsed
 
         observer = NotificationCenter.default.addObserver(
             forName: .settingsChanged, object: nil, queue: .main
@@ -54,6 +56,7 @@ final class SettingsStore: ObservableObject {
                 self.textColor = Color(nsColor: AppSettings.shared.unselectedTextColor)
                 self.toggleIndex = AppSettings.shared.togglePairIndex
                 self.launchAtLogin = AppSettings.shared.launchAtLogin
+                self.showFullBar = !HiderModule.shared.isCollapsed
             }
         }
     }
@@ -62,6 +65,7 @@ final class SettingsStore: ObservableObject {
     func setText(_ ns: NSColor) { AppSettings.shared.unselectedTextColor = ns }
     func setToggle(_ i: Int)    { AppSettings.shared.togglePairIndex = i }
     func setLaunchAtLogin(_ b: Bool) { AppSettings.shared.launchAtLogin = b }
+    func setShowFullBar(_ b: Bool) { HiderModule.shared.isCollapsed = !b }
 }
 
 // MARK: - Root
@@ -169,6 +173,13 @@ struct SettingsContentView: View {
             VStack(alignment: .leading, spacing: 24) {
                 Text("Settings")
                     .font(.system(size: 26, weight: .bold))
+
+                sectionHeader("Menu Bar")
+                Toggle("Show full menu bar", isOn: Binding(
+                    get: { store.showFullBar },
+                    set: { store.setShowFullBar($0) }
+                ))
+                .toggleStyle(.switch)
 
                 sectionHeader("Circle Background (Unselected)")
                 HStack(spacing: 10) {
